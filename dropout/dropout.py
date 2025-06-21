@@ -62,7 +62,7 @@ plt.ylabel('Prawdziwe')
 plt.title('Macierz Pomyłek')
 plt.show()
 
-### wykorzystanie shapa do zobaczenia co jest w srodku modelu
+### wykorzystanie shapa 
 
 import shap
 
