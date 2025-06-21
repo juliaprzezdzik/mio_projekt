@@ -3,14 +3,11 @@
 import pandas as pd
 import numpy as np
 
-#wykorztstujemy zbior dotyczacy sukcesu akademickiego studentow
 df = pd.read_csv('dropout.csv', sep=';')
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from tensorflow.keras.utils import to_categorical
-
-#### preprocessing ###########
 
 label_encoder = LabelEncoder()
 y_encoded = label_encoder.fit_transform(df['Target'])
@@ -22,21 +19,16 @@ scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-####budowa i trening modelu MLP
-
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
 
 tf.random.set_seed(42)
 
-
 model_full = Sequential([Dense(16, activation='relu', input_shape=(X_train_scaled.shape[1],)), Dropout(0.2), Dense(y_train.shape[1], activation='softmax') ])
 model_full.compile(optimizer='adam',loss='categorical_crossentropy', metrics=['accuracy'])
 model_full.summary()
 history_full = model_full.fit(X_train_scaled, y_train,epochs=30,batch_size=16,validation_data=(X_test_scaled, y_test),verbose=1 )
-
-### sprawdzamy jak model radzi sobie na danych testowych
 
 import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report, confusion_matrix
@@ -62,18 +54,18 @@ plt.ylabel('Prawdziwe')
 plt.title('Macierz Pomyłek')
 plt.show()
 
-### wykorzystanie shapa 
-
 import shap
 
-explainer = shap.KernelExplainer(model_full.predict, background_data)
-shap_values = explainer.shap_values(X_test_scaled)
-print("\nWykres SHAP:")
-shap.summary_plot(shap_values, X_test_scaled, feature_names=X.columns, class_names=class_names)
+background_data = X_train_scaled[np.random.choice(X_train_scaled.shape[0], size=100, replace=False)]
+explainer = shap.Explainer(model_full, background_data)
+shap_exp = explainer(X_test_scaled)
 
-## redukowanie cech i kolejny trening
+if shap_exp.values.ndim == 3:
+    shap_values = [shap_exp.values[:, i, :] for i in range(shap_exp.values.shape[1])]
+else:
+    shap_values = [shap_exp.values]
 
-
+shap.summary_plot(shap_exp, feature_names=X.columns, class_names=class_names)
 mean_abs_shap = np.mean([np.abs(sv).mean(0) for sv in shap_values], axis=0)
 feature_importance = pd.DataFrame(list(zip(X.columns, mean_abs_shap)), columns=['Cecha', 'Średnia wart. SHAP'])
 feature_importance = feature_importance.sort_values(by='Średnia wart. SHAP', ascending=True)
@@ -88,8 +80,6 @@ X_test_reduced_scaled = scaler_reduced.transform(X_test_reduced)
 model_reduced = Sequential([Dense(128, activation='relu', input_shape=(X_train_reduced_scaled.shape[1],)),Dropout(0.3),Dense(64, activation='relu'),Dropout(0.3),Dense(y_train.shape[1], activation='softmax')])
 model_reduced.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 history_reduced = model_reduced.fit(X_train_reduced_scaled, y_train,epochs=50,batch_size=32,validation_data=(X_test_reduced_scaled, y_test),verbose=0)
-
-###porownanie wynikow
 
 loss_reduced, accuracy_reduced = model_reduced.evaluate(X_test_reduced_scaled, y_test, verbose=0)
 print(f"\nDokładność na zbiorze testowym (zredukowany zbiór): {accuracy_reduced*100:.2f}%")
