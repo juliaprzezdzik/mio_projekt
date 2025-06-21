@@ -31,10 +31,10 @@ from tensorflow.keras.layers import Dense, Dropout
 tf.random.set_seed(42)
 
 
-model_full = Sequential([Dense(128, activation='relu', input_shape=(X_train_scaled.shape[1],)), Dropout(0.3), Dense(64, activation='relu'), Dropout(0.3),Dense(y_train.shape[1], activation='softmax') ])
+model_full = Sequential([Dense(16, activation='relu', input_shape=(X_train_scaled.shape[1],)), Dropout(0.2), Dense(y_train.shape[1], activation='softmax') ])
 model_full.compile(optimizer='adam',loss='categorical_crossentropy', metrics=['accuracy'])
 model_full.summary()
-history_full = model_full.fit(X_train_scaled, y_train,epochs=50,batch_size=32,validation_data=(X_test_scaled, y_test),verbose=1 )
+history_full = model_full.fit(X_train_scaled, y_train,epochs=30,batch_size=16,validation_data=(X_test_scaled, y_test),verbose=1 )
 
 ### sprawdzamy jak model radzi sobie na danych testowych
 
